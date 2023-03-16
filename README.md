@@ -46,7 +46,6 @@ eco2_model.clusterPoints('hierarchical', k = num_clusters)
 ```
 which can be plot using:
 ```
-
 eco2_model.plot_2D_slice(prefixes=[], fixed_values=[], parent_cmap='tab20c',s=70, figsize=(12,12), 
                          to_plot = 'cluster', show_edge=False,frac_prefix= None,
                             xlabel = '$f_{org1}$',
@@ -56,7 +55,6 @@ eco2_model.plot_2D_slice(prefixes=[], fixed_values=[], parent_cmap='tab20c',s=70
 or analyzed on a table format by using 
 
 ```
-
 eco2_model.get_cluster_reaction_values(thr=0.8, changing= True)
 ```
  and
@@ -66,6 +64,11 @@ df_comp = eco2_model.compare_clusters(df, 'c3','c4')
 to compare two clusters (in this case `c3` and `c4`.
 
 ### Quantitative Flux Coupling Analysis
+A quantitative version of Flux Coupling Analysis (FCA) can be performed on different points of the grid defined by their coordinates, and for two reactions of choice to study how distribution of fluxes changes on different points of the grid, as follows:
+```
+eco2_model.quan_FCA(grid_x, grid_y, rxns_analysis)
+plot_qFCA(col_wrap=4)
+```
 
 
 ## Supplementary files
