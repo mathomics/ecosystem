@@ -98,11 +98,21 @@ class Ecosystem:
         for m in self.models:
             cmodel.merge(m)
         
+        all_objectives = dict()
+        for member in self.objectives:
+            print(member)
+            for k in member.keys():
+                rxn_k = cmodel.reactions.get_by_id(k)
+                all_objectives[rxn_k] = member[k] 
+            
+            
         cmodel.solver = solver
-        member_objective = self.objectives[0] # we take the objective of one member model
+        #print(type(self.objectives[0]))
+        #member_objective = self.objectives[0] # we take the objective of one member model      
+        #cmodel.objective = { cmodel.reactions.get_by_id(rid) : coeff  for rid, coeff in member_objective.items()}
+        cmodel.objective = all_objectives
                 
-        cmodel.objective = { cmodel.reactions.get_by_id(rid) : coeff  for rid, coeff in member_objective.items()}
-        
+            
         self.cmodel = cmodel       
         
     
@@ -590,7 +600,7 @@ class Ecosystem:
          
         return r
     
-    def _analyze_point(self, ptuple, analysis = 'feasibility', update_bounds = False, delta = 1e-4):
+    def _analyze_point(self, ptuple, analysis = 'feasibility', update_bounds = False, delta = 1e-9):
         
         # ptuple: tuple of two arrays:   (0) Grid point coordinates; 
         #                                (1) grid point member fractions; grid point
@@ -1038,7 +1048,9 @@ class Ecosystem:
             k = 2
             color_labels = ['','unfeasible', 'feasible']
             
-            self._categorical_coloring_plot(full_slice_points, slice_colors, parent_cmap, k, color_labels, lines=lines, xlabel = xlabel, ylabel= ylabel,
+            #self._categorical_coloring_plot(full_slice_points, slice_colors, parent_cmap, k, color_labels, lines=lines, xlabel = xlabel, ylabel= ylabel,
+            #                       figsize=figsize, s=s,shrink=0.5)
+            self._categorical_coloring_plot(slice_points, slice_colors, parent_cmap, k, color_labels, lines=lines, xlabel = xlabel, ylabel= ylabel,
                                    figsize=figsize, s=s,shrink=0.5)
             
         # 3. Points are colored according to their community growth values    
@@ -1116,7 +1128,6 @@ class Ecosystem:
         plt.ylabel(ylabel)
         if len(saveFile)>0:
             plt.savefig(str(saveFile)+'.pdf')
-        
         plt.show()        
                  
     @staticmethod
@@ -1146,7 +1157,7 @@ class Ecosystem:
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         if len(saveFile)>0:
-            plt.savefig(str(saveFile)+'.pdf')
+            plt.savefig(str(saveFile)+'.png')
         plt.show()           
 
     
@@ -1348,7 +1359,8 @@ class Ecosystem:
             print("Missing FCA results")
             print("Using non-blocked reactions only")
             self.get_non_blocked_reactions()  
-            rxn2cluster = list(self.non_blocked)             
+            rxn2cluster = list(self.non_blocked)  
+            #rxn2cluster = [r.id for r in self.cmodel.reactions]
 
         else:      
             accounted = []      
@@ -1377,7 +1389,7 @@ class Ecosystem:
         self.rxn2cluster =  rxn2cluster
         print("Total reactions considered for fva and clustering: %d" % len(self.rxn2cluster))
         
-    def get_cluster_reaction_values(self, vector = 'qual_vector', thr=0.75, changing= True):
+    def get_cluster_reaction_values(self, vector = 'qual_vector', thr=0.75, changing= True, convert=True):
         
         if self.clusters is None:
             raise RuntimeError("Missing clustering/qualitative FVA results!")
@@ -1421,6 +1433,9 @@ class Ecosystem:
             changing_filter = reps.apply(lambda x: x.unique().size > 1, axis = 1)    
             reps = reps[changing_filter.values]
         
+        if convert:
+            cat_dict = {-3.0: '-', -2.0: '--',-1.0: '-0',1.0: '0+',0.0: '0',2.0: '++',3.0: '+',4.0: '-+',5.0: 'err',100.0: 'var'}
+            reps = reps.replace(cat_dict)
         
         return reps
         
@@ -1522,4 +1537,108 @@ class Ecosystem:
             
         self.rk = rk
         self.rclusters = rclusters    
-        print("Done!")         
+        print("Done!")    
+
+    def quan_FCA(self, grid_x, grid_y, rxns_analysis):
+        #Performs quantitative Flux Coupling Analysis on two reactions (rxns_analysis) and on points of a sub-grid defined by points grid_x, grid_y
+        #returns: a dataframe with columns to plot afterwards
+        #Columns: flux_rxns_analysis[0], flux_rxn_analysis[1], FVA (str: minimum or maximum), point (coordinates of point)
+
+        feasible_points = self.points[self.feasible_points]
+        analyze_points = []
+        print('Quantitative Flux Coupling analysis \n Initializing grid...')
+
+        #Match points defined by the user in grid_x, grid_y to specific points on the grid
+        for y in grid_y:
+            for x in grid_x:
+                search_point = [x, y]
+                distances = np.linalg.norm(feasible_points-search_point, axis=1)
+                min_index = np.argmin(distances)
+                analyze_points.append(min_index)
+                print(f"the closest point to {search_point} is {feasible_points[min_index]}, at a distance of {distances[min_index]}")
+
+
+        
+
+        maxmin_data = []
+        for this_point in analyze_points:
+            model = copy.deepcopy(self)
+            feasible_points = model.points[model.feasible_points]
+            this_point_coords = feasible_points[this_point]
+            print('Selected point'+str(this_point_coords))
+            print('This point coords '+str(this_point_coords))
+            this_point_frac = [this_point_coords[0], 1-this_point_coords[0]]
+            print('This point frac '+str(this_point_frac))
+            point = [this_point_coords[0]*this_point_coords[1], (1-this_point_coords[0])*this_point_coords[1]] #equivalent to old grid
+            print('Old grid point '+str(point))
+
+            #update bounds
+            for i, member in enumerate(model.prefixes):
+                mfrac = this_point_frac[i]
+                mrxns = model.member_rxns[member]
+
+                for rid in mrxns:
+                    r = model.cmodel.reactions.get_by_id(rid)
+                    old_bounds = r.bounds
+                    r.bounds = (old_bounds[0]*mfrac, old_bounds[1]*mfrac)
+
+            for ix, member_objectives in enumerate(model.objectives):
+                new_bounds = (point[ix], point[ix])
+
+                for rid in member_objectives.keys():
+                    rxn = model.cmodel.reactions.get_by_id(rid)
+                    rxn.bounds = new_bounds
+
+            try:
+                #define limits reactions based on theoretical max-min defined from model
+                rxn_ref_fva = flux_variability_analysis(model.cmodel, reaction_list = rxns_analysis[0])
+
+                #define range reactions
+                values_rxn_ref = np.linspace(rxn_ref_fva['minimum'][0], rxn_ref_fva['maximum'][0], num=50)
+                values_rmax = []
+                values_rmin = []
+
+                with model.cmodel as cmodel:
+                    for val in values_rxn_ref:
+                        rxn = cmodel.reactions.get_by_id(rxns_analysis[0])
+                        rxn.bounds = (val,val)
+                        #compute max min
+                        fva = flux_variability_analysis(cmodel, reaction_list = rxns_analysis[1])
+                        for i, el in enumerate(fva):
+                            row_dict = dict()
+                            row_dict[rxns_analysis[0]] = val/fraction_to_normalize(this_point_frac, rxns_analysis[0])
+                            row_dict[rxns_analysis[1]] = fva[el][0]/fraction_to_normalize(this_point_frac, rxns_analysis[1])
+                            row_dict['FVA'] = el
+                            row_dict['point'] = str([round(this_point_coords[0],3), round(this_point_coords[1],3)])
+                            maxmin_data.append(row_dict)
+
+            except:
+                print('\n Issues with '+str(this_point_coords)+' unfeasible?')
+
+        return(pd.DataFrame(maxmin_data))
+
+    def plot_qFCA(maxmin_df, col_wrap=4):
+        #Plots results computed by quan_FCA
+        #input: maxmin_df (output of quan_FCA)
+        #output: plot
+
+        sns.set(font_scale = 2)
+        rxns_analysis = maxmin_df.columns[0:2]
+        sns.set_style("whitegrid")
+
+        g=sns.relplot(data = maxmin_df, x=rxns_analysis[0], y=rxns_analysis[1], col = 'point', hue='FVA', kind='line', col_wrap=4, lw=0)
+        points = maxmin_df.point.unique()
+        for i,ax in enumerate(g._axes):
+            p = points[i]
+
+            p_df = maxmin_df.loc[maxmin_df['point']==p]
+            x = p_df.loc[p_df['FVA']=='maximum'][rxns_analysis[0]].to_numpy()
+
+            y1 = p_df.loc[p_df['FVA']=='maximum']
+            y1 = y1[rxns_analysis[1]].to_numpy()
+
+            y2 = p_df.loc[p_df['FVA']=='minimum']
+            y2 = y2[rxns_analysis[1]].to_numpy()
+
+            ax.fill_between(x, y1,y2, color='none',hatch='//', edgecolor="k", linewidth=0.001)
+
