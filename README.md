@@ -18,13 +18,13 @@ eco2 = Ecosystem(models=[model_1, model_2], prefixes=['org1', 'org2], community_
 ```
 To constrain inputs of nutrients (in this case metabolite `A_e`) to the common space shared by all members of the community:
 ```
-eco2_model.set_pool_bounds({'A_e':(-lb,1000)}, bioCons=-bc)
+eco2.set_pool_bounds({'A_e':(-lb,1000)}, bioCons=-bc)
 ```
 This function also accepts an additional parameter where biological constraints (bioCons) can be set up for the organisms of the community.
 
 To generate a grid of 10x10 for analysis:
 ```
-eco2_model.set_cluster_reactions()
+eco2.set_cluster_reactions()
 eco2.build_grid(numPoints = 10, expand = True, drop_zero=True)
 eco2.get_member_reactions()
 eco2.get_points_distribution()
@@ -32,21 +32,21 @@ eco2.get_points_distribution()
 ### Grid analysis and clustering
 To analyze the grid different tests can be performed (feasibility, qualitative Flux Variability analysis (FVA)), as follows:
 ``` 
-eco2_model.analyze_grid(analysis = 'feasibility', update_bounds=True) 
+eco2.analyze_grid(analysis = 'feasibility', update_bounds=True) 
 ```
 checks the feasibility of each point of the pre-computed grid of abundance and community growth rates
 or 
 ```
-eco2_model.analyze_grid(analysis = 'qual_fva', update_bounds=True)
+eco2.analyze_grid(analysis = 'qual_fva', update_bounds=True)
 ```
 which performs qualitative FVA on each point of the grid. The output of this analysis can be analyzed by clustering a defined number of clusters (`num_clusters`):
 
 ```
-eco2_model.clusterPoints('hierarchical', k = num_clusters)
+eco2.clusterPoints('hierarchical', k = num_clusters)
 ```
 which can be plot using:
 ```
-eco2_model.plot_2D_slice(prefixes=[], fixed_values=[], parent_cmap='tab20c',s=70, figsize=(12,12), 
+eco2.plot_2D_slice(prefixes=[], fixed_values=[], parent_cmap='tab20c',s=70, figsize=(12,12), 
                          to_plot = 'cluster', show_edge=False,frac_prefix= None,
                             xlabel = '$f_{org1}$',
                             ylabel ='$Biomass_{community}$', saveFile='clusters_toy')
@@ -55,18 +55,18 @@ eco2_model.plot_2D_slice(prefixes=[], fixed_values=[], parent_cmap='tab20c',s=70
 or analyzed on a table format by using 
 
 ```
-eco2_model.get_cluster_reaction_values(thr=0.8, changing= True)
+eco2.get_cluster_reaction_values(thr=0.8, changing= True)
 ```
  and
 ```
-df_comp = eco2_model.compare_clusters(df, 'c3','c4')
+df_comp = eco2.compare_clusters(df, 'c3','c4')
 ```
 to compare two clusters (in this case `c3` and `c4`.
 
 ### Quantitative Flux Coupling Analysis
 A quantitative version of Flux Coupling Analysis (FCA) can be performed on different points of the grid defined by their coordinates, and for two reactions of choice to study how distribution of fluxes changes on different points of the grid, as follows:
 ```
-eco2_model.quan_FCA(grid_x, grid_y, rxns_analysis)
+eco2.quan_FCA(grid_x, grid_y, rxns_analysis)
 plot_qFCA(col_wrap=4)
 ```
 
