@@ -1,12 +1,14 @@
 import numpy as np
 import pandas as pd
 import pickle
+import copy
 
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.path import Path
 from matplotlib.colors import ListedColormap
 import matplotlib.ticker as mtick
+import seaborn as sns
 
 import cobra
 from cobra import Metabolite, Reaction, Model
@@ -1547,7 +1549,20 @@ class Ecosystem:
         feasible_points = self.points[self.feasible_points]
         analyze_points = []
         print('Quantitative Flux Coupling analysis \n Initializing grid...')
+        def fraction_to_normalize(point_fractions, reaction):
+            #from point_fraction computes which element of this array should be used for normalization
+            #reaction: string reaction id
+            fraction = ''
+            for i, pre in enumerate(self.prefixes):
+                if reaction.startswith(pre+'_'):
+                    fraction = point_fractions[i]
 
+            
+            if fraction=='':
+                print('No org detected, asumming community reaction')
+                fraction =1
+        
+            return(fraction)
         #Match points defined by the user in grid_x, grid_y to specific points on the grid
         for y in grid_y:
             for x in grid_x:
@@ -1589,39 +1604,40 @@ class Ecosystem:
                     rxn = model.cmodel.reactions.get_by_id(rid)
                     rxn.bounds = new_bounds
 
-            try:
-                #define limits reactions based on theoretical max-min defined from model
-                rxn_ref_fva = flux_variability_analysis(model.cmodel, reaction_list = rxns_analysis[0])
+            #try:
+            #define limits reactions based on theoretical max-min defined from model
+            rxn_ref_fva = flux_variability_analysis(model.cmodel, reaction_list = rxns_analysis[0])
 
-                #define range reactions
-                values_rxn_ref = np.linspace(rxn_ref_fva['minimum'][0], rxn_ref_fva['maximum'][0], num=50)
-                values_rmax = []
-                values_rmin = []
+            #define range reactions
+            values_rxn_ref = np.linspace(rxn_ref_fva['minimum'][0], rxn_ref_fva['maximum'][0], num=50)
+            values_rmax = []
+            values_rmin = []
 
-                with model.cmodel as cmodel:
-                    for val in values_rxn_ref:
-                        rxn = cmodel.reactions.get_by_id(rxns_analysis[0])
-                        rxn.bounds = (val,val)
-                        #compute max min
-                        fva = flux_variability_analysis(cmodel, reaction_list = rxns_analysis[1])
-                        for i, el in enumerate(fva):
-                            row_dict = dict()
-                            row_dict[rxns_analysis[0]] = val/fraction_to_normalize(this_point_frac, rxns_analysis[0])
-                            row_dict[rxns_analysis[1]] = fva[el][0]/fraction_to_normalize(this_point_frac, rxns_analysis[1])
-                            row_dict['FVA'] = el
-                            row_dict['point'] = str([round(this_point_coords[0],3), round(this_point_coords[1],3)])
-                            maxmin_data.append(row_dict)
+            with model.cmodel as cmodel:
+                for val in values_rxn_ref:
+                    rxn = cmodel.reactions.get_by_id(rxns_analysis[0])
+                    rxn.bounds = (val,val)
+                    #compute max min
+                    fva = flux_variability_analysis(cmodel, reaction_list = rxns_analysis[1])
+                    for i, el in enumerate(fva):
+                        row_dict = dict()
+                        row_dict[rxns_analysis[0]] = val/fraction_to_normalize(this_point_frac, rxns_analysis[0])
+                        row_dict[rxns_analysis[1]] = fva[el][0]/fraction_to_normalize(this_point_frac, rxns_analysis[1])
+                        row_dict['FVA'] = el
+                        row_dict['point'] = str([round(this_point_coords[0],3), round(this_point_coords[1],3)])
+                        maxmin_data.append(row_dict)
 
-            except:
-                print('\n Issues with '+str(this_point_coords)+' unfeasible?')
+            #except:
+            #    print('\n Issues with '+str(this_point_coords)+' unfeasible?')
+        
+        self.qFCA = pd.DataFrame(maxmin_data)
+        
 
-        return(pd.DataFrame(maxmin_data))
-
-    def plot_qFCA(maxmin_df, col_wrap=4):
+    def plot_qFCA(self, col_wrap=4):
         #Plots results computed by quan_FCA
         #input: maxmin_df (output of quan_FCA)
         #output: plot
-
+        maxmin_df = self.qFCA
         sns.set(font_scale = 2)
         rxns_analysis = maxmin_df.columns[0:2]
         sns.set_style("whitegrid")

@@ -59,7 +59,7 @@ eco2.get_cluster_reaction_values(thr=0.8, changing= True)
 ```
  and
 ```
-df_comp = eco2.compare_clusters(df, 'c3','c4')
+eco2.compare_clusters(df, 'c3','c4')
 ```
 to compare two clusters (in this case `c3` and `c4`.
 
