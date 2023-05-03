@@ -73,9 +73,9 @@ plot_qFCA(col_wrap=4)
 
 ## Supplementary files
 - S1: Model of a synthetic _Escherichia coli_ model
-- S2: Qualitative states of reactions of a synthetic community
-- S1: Model curation for _A. ferrooxidans_ and _S. thermosulfidooxidans_
-- S2: Models _A. ferrooxidans_ Wenelen (iML510), _S. thermosulfidooxidans_ Cutipay (iSM517) and the community model generated for the bioleaching community in the base case scenario, in both sbml and xls format.
+- S2: Qualitative states of reactions of an _E. coli_ synthetic community
+- S3: Additional reactions for model curation of _A. ferrooxidans_ and _S. thermosulfidooxidans_
+- S4: Models _A. ferrooxidans_ Wenelen (iML510), _S. thermosulfidooxidans_ Cutipay (iSM517) and the community model generated for the bioleaching community in the base case scenario, in both sbml and xls format.
 
 ## Tutorials and case examples
 - `sup_toy_example.ipynb` includes an analysis that can be performed locally and its associated plots
