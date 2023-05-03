@@ -61,7 +61,7 @@ eco2.get_cluster_reaction_values(thr=0.8, changing= True)
 ```
 eco2.compare_clusters(df, 'c3','c4')
 ```
-to compare two clusters (in this case `c3` and `c4`.
+to compare two clusters (in this case `c3` and `c4`).
 
 ### Quantitative Flux Coupling Analysis
 A quantitative version of Flux Coupling Analysis (FCA) can be performed on different points of the grid defined by their coordinates, and for two reactions of choice to study how distribution of fluxes changes on different points of the grid, as follows:
@@ -72,6 +72,8 @@ plot_qFCA(col_wrap=4)
 
 
 ## Supplementary files
+- S1: Model of a synthetic _Escherichia coli_ model
+- S2: Qualitative states of reactions of a synthetic community
 - S1: Model curation for _A. ferrooxidans_ and _S. thermosulfidooxidans_
 - S2: Models _A. ferrooxidans_ Wenelen (iML510), _S. thermosulfidooxidans_ Cutipay (iSM517) and the community model generated for the bioleaching community in the base case scenario, in both sbml and xls format.
 
