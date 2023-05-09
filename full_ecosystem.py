@@ -17,8 +17,8 @@ from cobra.util.solver import linear_reaction_coefficients
 from cobra.flux_analysis import flux_variability_analysis
 from cobra.io.mat import _cell
 
-from benpy import vlpProblem
-from benpy import solve as bensolve
+#from benpy import vlpProblem
+#from benpy import solve as bensolve
 
 from scipy.sparse import lil_matrix
 from scipy.spatial import Delaunay
@@ -827,24 +827,14 @@ class Ecosystem:
         rxn.bounds = new_bounds
         return old_bounds
                 
-    def build_grid(self,expand = True, numPoints=10, drop_zero = True):
-        
-        #polytope vertex
-        #polytope_vertex = self.get_polytope_vertex(expand=expand)
-        
-        #polytope from vertex
-        #hull = Delaunay(polytope_vertex)
-        
-        # "rectangular" grid
-        #maxs = np.max(polytope_vertex, axis=0)
-        #mins = np.min(polytope_vertex, axis=0) #should be vector of zeros
-        #max_com = self.cmodel.slim_optimize() #assuming objective function of the model is community growth
-        
+    def build_grid(self,expand = True, numPoints=10, drop_zero = True, ignore_maint = True):
+                
         #compute max_com by relaxing constraints such as ATPM
         with self.cmodel:
-            for rxn in self.cmodel.reactions:
-                if rxn.lower_bound > 0:
-                    rxn.lower_bound = 0
+            if ignore_maint:
+                for rxn in self.cmodel.reactions:
+                    if rxn.lower_bound > 0:
+                        rxn.lower_bound = 0
             
             max_com = self.cmodel.slim_optimize()
         maxs = [1 ,max_com]
@@ -1008,6 +998,7 @@ class Ecosystem:
         
         # get edge of full slice
         lines = None
+        full_slice_points = self.points[full_slice_indexes,:][:,free_member_indexes]
         if show_edge:
             full_slice_points = self.points[full_slice_indexes,:][:,free_member_indexes]
             lines = self._draw_slice_edge(full_slice_points)        
@@ -1050,10 +1041,10 @@ class Ecosystem:
             k = 2
             color_labels = ['','unfeasible', 'feasible']
             
-            #self._categorical_coloring_plot(full_slice_points, slice_colors, parent_cmap, k, color_labels, lines=lines, xlabel = xlabel, ylabel= ylabel,
-            #                       figsize=figsize, s=s,shrink=0.5)
-            self._categorical_coloring_plot(slice_points, slice_colors, parent_cmap, k, color_labels, lines=lines, xlabel = xlabel, ylabel= ylabel,
+            self._categorical_coloring_plot(full_slice_points, slice_colors, parent_cmap, k, color_labels, lines=lines, xlabel = xlabel, ylabel= ylabel,
                                    figsize=figsize, s=s,shrink=0.5)
+            #self._categorical_coloring_plot(slice_points, slice_colors, parent_cmap, k, color_labels, lines=lines, xlabel = xlabel, ylabel= ylabel,
+            #                       figsize=figsize, s=s,shrink=0.5)
             
         # 3. Points are colored according to their community growth values    
         elif to_plot == 'community_growth':
