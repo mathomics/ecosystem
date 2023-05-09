@@ -79,6 +79,7 @@ plot_qFCA(col_wrap=4)
 
 ## Tutorials and case examples
 - `sup_toy_example.ipynb` includes an analysis that can be performed locally and its associated plots
+- `sup_coli_synthetic_com.ipynb` includes an analysis that can be performed locally and its associated plots for a synthetic community of two _E. coli_ strains
 - `sup_mat_multiple_bioleaching.ipynb` includes analysis of multiple scenarios simultaneously from previously computed results stored on the folder result_files. It requires both models included in Supplementary File 2,  `simulations_pareto4.csv` to filter the different simulated scenarios and the files available on the folder `result_files`
 
 ## How to cite
